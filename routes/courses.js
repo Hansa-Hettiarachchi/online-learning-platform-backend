@@ -2,6 +2,8 @@ const express = require('express');
 const auth = require('../middleware/authMiddleware');
 const Course = require('../models/Course');
 const User = require('../models/User');
+const { getCourseRecommendations } = require('../openaiClient');
+const { findMatchingCourses } = require('../utils/courseUtils'); 
 const mongoose = require('mongoose');
 const router = express.Router();
 
@@ -163,5 +165,116 @@ router.get('/:courseId/enrolled-students', auth, async (req, res) => {
         res.status(500).json({ message: 'Server error' });
     }
 });
+
+
+router.post('/recommendations', async (req, res) => {
+    try {
+      const { prompt } = req.body;
+      
+      // Get recommendations from GPT-3
+      const recommendationsText = await getCourseRecommendations(prompt);
+      
+      // Process recommendations text
+      const recommendations = recommendationsText.split('\n').filter(line => line.trim().length > 0);
+      
+      // Find matching courses
+      const matchingCourses = await findMatchingCourses(recommendations);
+      
+      // Send response
+      res.json(matchingCourses);
+    } catch (error) {
+      console.error('Error fetching recommendations:', error);
+      res.status(500).send('Error fetching recommendations');
+    }
+  });
+
+
+// router.post('/recommendations', async (req, res) => {
+//     try {
+//       const { prompt } = req.body;
+  
+//       if (!prompt) {
+//         return res.status(400).json({ message: 'Prompt is required' });
+//       }
+  
+//       const recommendationsText = await getCourseRecommendations(prompt);
+  
+//       // Assuming the recommendations are newline-separated
+//       const recommendations = recommendationsText.split('\n').map(course => course.trim());
+      
+//       // Fetch courses based on recommendations
+//       const courses = await Course.find({ title: { $in: recommendations } }).exec();
+  
+//       res.status(200).json(courses);
+//     } catch (error) {
+//       console.error('Error fetching course recommendations:', error);
+//       res.status(500).json({ message: 'Server error' });
+//     }
+//   });
+
+// // Endpoint to get course recommendations
+// router.post('/recommendations', async (req, res) => {
+//     try {
+//       const { prompt } = req.body;
+  
+//       if (!prompt) {
+//         return res.status(400).json({ message: 'Prompt is required' });
+//       }
+  
+//       const recommendationsText = await getCourseRecommendations(prompt);
+  
+//       // Parse recommendations (assuming the text is a comma-separated list of course titles)
+//       const recommendations = recommendationsText.split('\n').map(course => course.trim());
+      
+//       const courses = await Course.find({ title: { $in: recommendations } }).exec();
+  
+//       res.status(200).json(courses);
+//     } catch (error) {
+//       console.error('Error fetching course recommendations:', error);
+//       res.status(500).json({ message: 'Server error' });
+//     }
+//   });
+  
+
+// // POST /recommend-courses - Students provide a prompt, GPT-3 suggests courses
+// router.post('/recommendations', async (req, res) => {
+//     const { prompt } = req.body;
+
+//     if (!prompt) {
+//         return res.status(400).json({ message: 'Prompt is required' });
+//     }
+
+//     // Check if API request limit has been reached
+//     if (apiRequestCount >= 250) {
+//         return res.status(429).json({ message: 'API request limit reached' });
+//     }
+
+//     try {
+//         // Use GPT-3 to generate course recommendations based on the student's prompt
+//         const gptResponse = await openai.createCompletion({
+//             model: "text-davinci-003", // or use 'gpt-3.5-turbo' if you're using the chat model
+//             prompt: `A student wants to become a ${prompt}. Recommend 5 relevant courses from the following: [Software Engineering, Web Development, Data Science, Machine Learning, Cybersecurity, DevOps, AI, Cloud Computing]`,
+//             max_tokens: 150,
+//             temperature: 0.7,
+//         });
+
+//         logApiRequest();  // Increment the API request count
+
+//         const gptText = gptResponse.data.choices[0].text.trim();
+
+//         // Optionally, map the generated text to your existing courses in the database
+//         const recommendedCourses = await Course.find({
+//             title: { $in: gptText.split(',').map(course => course.trim()) }
+//         });
+
+//         res.status(200).json({
+//             gptRecommendations: gptText,
+//             courses: recommendedCourses // Courses from the database
+//         });
+//     } catch (err) {
+//         console.error(err);
+//         res.status(500).json({ message: 'Error generating recommendations' });
+//     }
+// });
 
 module.exports = router;
