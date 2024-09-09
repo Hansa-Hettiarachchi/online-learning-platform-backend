@@ -2,6 +2,7 @@ const express = require('express');
 const auth = require('../middleware/authMiddleware');
 const Course = require('../models/Course');
 const User = require('../models/User');
+const mongoose = require('mongoose');
 const router = express.Router();
 
 // Create Course (Only Instructors)
@@ -26,17 +27,44 @@ router.get('/my-courses', auth, async (req, res) => {
     }
 });
 
-// Get Enrolled Students for a Course
-router.get('/:id/enrolled-students', auth, async (req, res) => {
-    const course = await Course.findById(req.params.id);
-    if (!course) return res.status(404).json({ message: 'Course not found' });
+router.get('/enrolled', auth, async (req, res) => {
+    try {
+        const userId = req.user.id;  // Assuming req.user contains the authenticated student's info
 
-    if (req.user.id !== course.instructor.toString()) return res.status(403).json({ message: 'Access denied' });
+        // Check if userId is a valid ObjectId
+        if (!mongoose.Types.ObjectId.isValid(userId)) {
+            return res.status(400).json({ message: 'Invalid user ID' });
+        }
 
-    // Fetch details of enrolled students (assuming you have this data)
-    const students = await User.find({ _id: { $in: course.enrolledStudents } });
-    res.json(students);
+        // Fetch the student with populated enrolledCourses
+        const student = await User.findById(userId).populate({
+            path: 'enrolledCourses',
+            select: 'title description instructor'
+        });
+
+        if (!student) {
+            return res.status(404).json({ message: 'Student not found' });
+        }
+
+        res.status(200).json(student.enrolledCourses);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Server error' });
+    }
 });
+
+
+// // Get Enrolled Students for a Course
+// router.get('/:id/enrolled-students', auth, async (req, res) => {
+//     const course = await Course.findById(req.params.id);
+//     if (!course) return res.status(404).json({ message: 'Course not found' });
+
+//     if (req.user.id !== course.instructor.toString()) return res.status(403).json({ message: 'Access denied' });
+
+//     // Fetch details of enrolled students (assuming you have this data)
+//     const students = await User.find({ _id: { $in: course.enrolledStudents } });
+//     res.json(students);
+// });
 
 // Get All Courses
 router.get('/', async (req, res) => {
@@ -79,6 +107,7 @@ router.delete('/:id', auth, async (req, res) => {
     res.json({ message: 'Course deleted' });
 });
 
+//enrolling to a course (Student)
 router.post('/enroll/:courseId', auth, async (req, res) => {
     try {
         const courseId = req.params.courseId;
@@ -112,6 +141,7 @@ router.post('/enroll/:courseId', auth, async (req, res) => {
     }
 });
 
+//view enrolled students for a course (Instructor)
 router.get('/:courseId/enrolled-students', auth, async (req, res) => {
     try {
         const courseId = req.params.courseId;
@@ -133,27 +163,5 @@ router.get('/:courseId/enrolled-students', auth, async (req, res) => {
         res.status(500).json({ message: 'Server error' });
     }
 });
-
-router.get('/enrolled', auth, async (req, res) => {
-    try {
-        const userId = req.user.id;
-
-        console.log(`User ID from request: ${userId}`);
-
-        if (!mongoose.Types.ObjectId.isValid(userId)) {
-            return res.status(400).json({ message: 'Invalid User ID' });
-        }
-
-        const user = await User.findById(userId).populate('enrolledCourses');
-        if (!user) return res.status(404).json({ message: 'User not found' });
-
-        console.log(`Enrolled courses for user: ${JSON.stringify(user.enrolledCourses)}`);
-        res.json(user.enrolledCourses);
-    } catch (err) {
-        console.error('Error in /enrolled endpoint:', err);
-        res.status(500).json({ message: 'Server error' });
-    }
-});
-
 
 module.exports = router;
