@@ -42,18 +42,6 @@ router.put('/:id', auth, async (req, res) => {
     res.json({ message: 'Course updated', course });
 });
 
-// // Delete Course (Only Instructors)
-// router.delete('/:id', auth, async (req, res) => {
-//     const course = await Course.findById(req.params.id);
-//     if (!course) return res.status(404).json({ message: 'Course not found' });
-
-//     if (req.user.id !== course.instructor.toString()) return res.status(403).json({ message: 'Access denied' });
-
-//     await course.remove();
-//     res.json({ message: 'Course deleted' });
-// });
-
-
 // Delete Course (Only Instructors)
 router.delete('/:id', auth, async (req, res) => {
     const course = await Course.findById(req.params.id);
