@@ -68,6 +68,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const authRoutes = require('./routes/auth');
+const courseRoutes = require('./routes/courses');
 
 const app = express();
 
@@ -81,7 +82,8 @@ mongoose.connect(process.env.MONGODB_URI)
   .catch((err) => console.log(err));
 
 // Use auth routes
-app.use('/api', authRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/courses', courseRoutes);
 
 // Start the server
 const PORT = process.env.PORT || 5000;
