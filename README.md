@@ -41,11 +41,14 @@ The project uses environment variables to store sensitive information like the A
 
 #### 2. Add the following environment variables to the .env file
 ```bash
+PORT=5000
+JWT_SECRET= your_JWT_Secret_string 
 OPENAI_API_KEY=your_openai_api_key
 MONGODB_URI=your_mongodb_connection_string
 ```
   - **OPENAI_API_KEY**: Replace `your_openai_api_key` with your OpenAI API key.
-  - **MONGODB_URI**: Replace `your_mongodb_connection_string` with your MongoDB connection string (e.g., `mongodb://localhost:27017/mydatabase`).
+  - **JWT_SECRET**: Replace `your_JWT_Secret_string` with your JWT Secret key.
+  - **MONGODB_URI**: Replace `your_mongodb_connection_string` with your MongoDB connection string (e.g., `mongodb+srv://<username>:<password>@cluster0.ibszb.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`).
 
 #### 3. **Save the `.env` file**.
 
@@ -62,7 +65,7 @@ mongod
 Now that everything is set up, you can start the Node.js server.
 
 ```bash
-npm run dev
+npm run start
 ```
 
 The server will start at `http://localhost:5000` by default.
